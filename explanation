@@ -1,0 +1,127 @@
+Main idea: Think of a group of friends. After a trip or dinner, some paid more, some paid less.
+The goal is: "Who owes how much to whom?", such that everyone ends up even. We don’t care about who paid where, just the net balances.
+
+Example:
+
+A: -5 → paid less, owes ₹5
+B: +25 → paid more, should receive ₹25
+
+We match payers with receivers one by one to settle debts.
+
+🔷 1. Rounding Function
+double roundTo(double value, int places) {
+    if (places < 0)
+        throw invalid_argument("Invalid number of decimal places");
+
+    double factor = pow(10.0, places);
+    return round(value * factor) / factor;
+}
+🧠 Logic: Rounding matters in money-related projects.
+If you want 2 decimal places: Multiply value by 100 (factor) -> Round it to nearest integer -> Then divide by 100 to get back decimal
+
+🔎 Why needed?
+To avoid floating-point errors like: 0.10000000009.
+
+🔷 2. getKeyFromValue
+string getKeyFromValue(unordered_map<string, double>& details, double value) {
+    for (const auto& pair : details) {
+        if (pair.second == value)
+            return pair.first;
+    }
+    return "";
+}
+🧠 Logic:
+Maps store key–value pairs like this:
+{ "A": -5, "B": 25, "C": -20 }  This function scans every entry and returns the person’s name (key) whose balance equals the provided value.
+
+Used to find: Person with the highest credit, Person with the most debt
+
+🔷 3. findPath() — Main Balancing Logic
+void findPath(unordered_map<string, double>& details) {
+Goal: Keep reducing debts until all balances are zero.
+
+Step-by-Step Inside findPath
+📍 a. Find the person who has to receive most (max) and pay most (min):
+
+auto maxIt = max_element(...);
+auto minIt = min_element(...);
+Example: { "A": -5, "B": 25, "C": -20 }  Max = B (25.0)  Min = C (-20.0)
+
+We now settle between B and C.
+
+📍 b. Add their balances: double result = roundTo(maxValue + minValue, 1);
+So:
+
+ini
+Copy
+Edit
+result = 25 + (-20) = 5
+This means: B still has ₹5 to collect, C is fully settled
+
+📍 c. Check who is now done
+if (result >= 0.0)
+Case 1 – result ≥ 0 → payer fully paid, receiver partially satisfied
+Print:
+
+C needs to pay B: 20.00
+Update:
+
+B → 5.0
+C → 0.0
+Case 2 – result < 0 → receiver fully satisfied, payer still owes more
+Print:
+
+C needs to pay B: 25.00
+Update:
+
+B → 0.0
+C → -5.0
+📍 d. Update the map and call recursively
+findPath(details); Repeat the process with updated values: Find max/min again, Reduce debts, Eventually all values will become 0.
+
+🔷 4. main() — Setting Up the Scenario
+unordered_map<string, double> parm;
+
+parm["A"] = -5.0;
+parm["B"] = 25.0;
+parm["C"] = -20.0;
+parm["D"] = 25.0;
+parm["E"] = -20.0;
+parm["F"] = -5.0;
+
+findPath(parm);
+🧠 Logic:
+We’re giving each friend’s net balance (what they owe or get).
+
+A owes ₹5, B gets ₹25, C owes ₹20, D gets ₹25, E owes ₹20, F owes ₹5
+
+Now the function matches them to settle.
+
+🧾 Sample Execution Walkthrough
+Let’s run through the logic:
+
+Max = D: ₹25, Min = C: ₹-20
+➤ C pays D ₹20 → Now D = ₹5, C = ₹0
+
+Max = B: ₹25, Min = E: ₹-20
+➤ E pays B ₹20 → Now B = ₹5, E = ₹0
+
+Max = D: ₹5, Min = A: ₹-5
+➤ A pays D ₹5 → Both 0
+
+Max = B: ₹5, Min = F: ₹-5
+➤ F pays B ₹5 → Both 0
+
+🟢 All balances are now 0
+
+🔚 Final Output:
+C needs to pay D: 20.00
+E needs to pay B: 20.00
+A needs to pay D: 5.00
+F needs to pay B: 5.00
+💡 Key Insights
+Concept	Meaning
+Positive balance:Person is owed money, Negative balance:Person owes money
+Match max and min	Always reduce largest payer and receiver
+Recursive calls	Continue until everyone is settled
+
