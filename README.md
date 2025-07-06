@@ -15,7 +15,6 @@ This project implements a Splitwise-style group expense settlement system in C++
 ## 🧠 Example
 
 ### Input:
-```plaintext
 A: -5  
 B: 25  
 C: -20  
